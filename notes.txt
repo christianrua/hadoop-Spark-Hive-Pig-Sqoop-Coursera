@@ -1,0 +1,32 @@
+#Sqoop import 
+sqoop import --connect jdbc:postgresql://172.12.0.5:5432/coursera_db --username postgres --password Password1* --table salaries --m 1
+
+hdfs dfsadmin -safemode leave
+
+apt-get install net-tools
+
+sqoop import --connect jdbc:postgresql://172.12.0.5:5432/coursera_db \
+--username postgres \
+--password "Password1*" \
+--table salaries \
+--columns salary,age \
+--m 1 \
+--target-dir salaries2
+
+sqoop import -D org.apache.sqoop.splitter.allow_text_splitter=true \
+--connect jdbc:postgresql://172.12.0.5:5432/coursera_db \
+--username postgres \
+--password "Password1*" \
+--query "select * from salaries s where s.salary > 90000.00 and \
+\$CONDITIONS" \
+--split-by gender \
+-m 2 \
+--target-dir salaries3
+
+sqoop export \
+--connect jdbc:postgresql://172.12.0.5:5432/coursera_db \
+--username postgres \
+--password "Password1*" \
+--table salaries2 \
+--export-dir salarydata \
+--input-fields-terminated-by ","

@@ -1,0 +1,19 @@
+CREATE DATABASE IF NOT EXISTS coursera;
+USE coursera;
+
+CREATE TABLE salaries (gender varchar(32), age int, salary int, zipcode int, id int);
+
+INSERT INTO salaries VALUES ("F",66,41000,95103,1);
+INSERT INTO salaries VALUES ("M",40,76000,95102,2);
+INSERT INTO salaries VALUES ("F",58,95000,95103,3);
+INSERT INTO salaries VALUES ("F",68,60000,95105,4);
+INSERT INTO salaries VALUES ("M",85,14000,95102,5);
+INSERT INTO salaries VALUES ("M",14,0,95105,6);
+INSERT INTO salaries VALUES ("M",52,2000,94040,7);
+INSERT INTO salaries VALUES ("M",67,99000,94040,8);
+INSERT INTO salaries VALUES ("F",43,11000,94041,9);
+INSERT INTO salaries VALUES ("F",37,65000,94040,10);
+
+CREATE USER 'christian'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'christian'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;

@@ -1,0 +1,122 @@
+version: "3.5"
+services:
+  slave1:
+    build:
+      context: .
+      shm_size: '2gb'
+    container_name: slave1
+    networks:
+      default:
+         ipv4_address: 172.12.0.3
+    extra_hosts:
+      - "master: 172.12.0.2"
+      - "slave2: 172.12.0.4"
+    command: bash -c  " 
+         /usr/sbin/sshd
+         && hadoop-daemon.sh --config /usr/local/hadoop/etc/hadoop start datanode
+         && yarn-daemon.sh --config /usr/local/hadoop/etc/hadoop start nodemanager
+         && start-slave.sh master:7077
+         && tail -f /dev/null"
+    hostname: slave1
+    restart: always
+    volumes:
+       - myhadoop:/slave1
+#  slave2:
+#    build:
+#      context: .
+#      shm_size: '2gb'
+#    container_name: slave2
+#    networks:
+#      default:
+#         ipv4_address: 172.12.0.4
+#    extra_hosts:
+#        - "master: 172.12.0.2"
+#        - "slave1: 172.12.0.3"
+#    command: bash -c  "
+#         /usr/sbin/sshd
+#         && hadoop-daemon.sh --config /usr/local/hadoop/etc/hadoop start datanode
+#         && yarn-daemon.sh --config /usr/local/hadoop/etc/hadoop start nodemanager
+#         && start-slave.sh master:7077
+#         && tail -f /dev/null"
+#    hostname: slave2
+#    restart: always
+#    volumes:
+#       - myhadoop:/slave2
+  master:
+    build:
+      context: .
+      shm_size: '2gb'
+      args: 
+           FORMAT_NAMENODE_COMMAND: hdfs namenode -format
+    container_name: master
+    networks:
+      default:
+         ipv4_address: 172.12.0.2
+    extra_hosts:
+      - "slave1: 172.12.0.3"
+      - "slave2: 172.12.0.4"
+    command: bash -c  "
+        /usr/sbin/sshd
+        && start-dfs.sh
+        && start-yarn.sh
+        && mr-jobhistory-daemon.sh start historyserver
+        && start-master.sh
+        && tail -f /dev/null"
+    ports:
+      - 50070:50070 #hdfs
+      - 8090:8090 #yarn
+      - 8080:8080 #spark
+      - 10000:10000 #hiveserer2
+      - 10002:10002 #hiveUI
+      - 8070:8070
+      - 8060:8060
+      - 7080:7080
+      - 7070:7070
+      - 8780:8780
+      - 8793:8793
+      - 4040:4040
+      - 9000:9000
+    hostname: master
+    restart: always
+    volumes: 
+       - myhadoop:/master
+       - "${PWD}/mysql_setup:/master/mysql_setup"
+       - "${PWD}/map_reduce:/master/map_reduce"
+
+  database:
+    image: 'postgres:latest'
+    ports:
+      - 15432:5432
+    env_file:
+      - .env
+    container_name: postgresql_db  
+    networks:
+      default:
+         ipv4_address: 172.12.0.5
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - 15433:80
+    env_file:
+      - .env
+    depends_on:
+      - database
+    container_name: pgadmin4   
+    networks:
+      default:
+         ipv4_address: 172.12.0.6
+    volumes:
+      - ./pgadmin-data/:/var/lib/pgadmin/    
+
+volumes:
+  myhadoop:
+    external: true
+networks:
+  default:
+    external:
+      name: hadoop-network
+
